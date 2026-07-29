@@ -27,14 +27,14 @@ class Settings:
     def from_environment(cls) -> Settings:
         return cls(
             data_path=Path(
-                os.environ.get("COHORT_DATA_PATH", BASE_DIR / "data/mortgages.csv")
+                os.environ.get("MORTGAGES_CSV_PATH", BASE_DIR / "data/mortgages.csv")
             ),
             firms_path=Path(
-                os.environ.get("COHORT_FIRMS_PATH", BASE_DIR / "config/firms.json")
+                os.environ.get("FIRMS_CONFIG_PATH", BASE_DIR / "config/firms.json")
             ),
             product_mappings_path=Path(
                 os.environ.get(
-                    "COHORT_PRODUCT_MAPPINGS_PATH",
+                    "PRODUCT_MAPPINGS_PATH",
                     BASE_DIR / "config/product_mappings.json",
                 )
             ),
