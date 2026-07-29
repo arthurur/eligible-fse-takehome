@@ -66,6 +66,7 @@ The pre-push hook blocks the push if the backend tests, frontend lint, or fronte
 - Add pagination or cursor-based retrieval instead of returning only the first 20 consumer previews.
 - Add frontend component and end-to-end tests covering filter serialization, loading and error states, the email guardrail toggle, and recovery-message previews.
 - Strengthen dataset validation and observability with schema checks, malformed-row metrics, query timings, and alerts for invalid runtime configuration.
+- Review edge cases, such as malformatted data, missing fields, etc
 
 ## AI usage explainer
 
