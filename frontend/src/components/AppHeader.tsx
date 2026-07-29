@@ -7,13 +7,13 @@ export function AppHeader() {
             CV
           </div>
           <div>
-            <p className="text-sm font-semibold tracking-[-0.01em] text-[#172033]">Cohort Viewer</p>
-            <p className="text-xs text-[#667085]">Customer experience operations</p>
+            <p className="text-sm font-semibold tracking-[-0.01em] text-[#172033]">
+              Cohort Viewer
+            </p>
+            <p className="text-xs text-[#667085]">
+              Customer experience operations
+            </p>
           </div>
-        </div>
-        <div className="flex items-center gap-2 text-xs font-medium text-[#475467]">
-          <span className="size-2 rounded-full bg-[#12a150] shadow-[0_0_0_3px_rgba(18,161,80,0.12)]" />
-          Query service
         </div>
       </div>
     </header>
