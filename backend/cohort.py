@@ -128,6 +128,7 @@ class CohortService:
     ) -> None:
         self.settings = settings
         self.clock = clock or (lambda: datetime.now(UTC))
+        self.allowed_firms = _load_allowed_firms(settings.firms_path)
 
     def query(
         self,
@@ -146,7 +147,7 @@ class CohortService:
             has_open_mortgage=has_open_mortgage,
         )
 
-        if firm not in _load_allowed_firms(self.settings.firms_path):
+        if firm not in self.allowed_firms:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Firm '{firm}' is not allowed",

@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from cohort import Settings
@@ -133,6 +134,38 @@ def test_disallowed_firm_and_malformed_parameters_are_specific(configured_client
     assert forbidden.status_code == 403
     assert forbidden.json() == {"detail": "Firm 'lender_b' is not allowed"}
     assert malformed.status_code == 422
+
+
+def test_firm_allowlist_is_loaded_once_at_startup(configured_client, tmp_path: Path):
+    client, _, _ = configured_client
+
+    (tmp_path / "firms.json").write_text(
+        '{"allowed_firms":["lender_b"]}',
+        encoding="utf-8",
+    )
+
+    still_allowed = client.get("/cohort", params={"firm": "lender_a"})
+    still_forbidden = client.get("/cohort", params={"firm": "lender_b"})
+
+    assert still_allowed.status_code == 200
+    assert still_forbidden.status_code == 403
+
+
+def test_invalid_firm_allowlist_prevents_startup(tmp_path: Path):
+    firms_path = tmp_path / "firms.json"
+    firms_path.write_text("[]", encoding="utf-8")
+    settings = Settings(
+        data_path=tmp_path / "mortgages.csv",
+        firms_path=firms_path,
+        product_mappings_path=tmp_path / "product_mappings.json",
+        audit_log_path=tmp_path / "audit.jsonl",
+    )
+
+    with pytest.raises(HTTPException) as raised:
+        create_app(settings)
+
+    assert raised.value.status_code == 500
+    assert raised.value.detail == "Firm access configuration must be a JSON object"
 
 
 def test_empty_cohort_and_invalid_runtime_mapping(configured_client):
