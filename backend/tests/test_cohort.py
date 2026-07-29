@@ -122,6 +122,22 @@ def test_product_mapping_changes_apply_without_restart(configured_client):
     assert changed["unmapped_product_types"] == []
 
 
+def test_product_aliases_are_aggregated_into_their_canonical_category(
+    configured_client,
+):
+    client, mappings_path, _ = configured_client
+    mappings_path.write_text(
+        '{"fixed":"Residential","tracker":"Residential"}',
+        encoding="utf-8",
+    )
+
+    response = client.get("/cohort", params={"firm": "lender_a"})
+
+    assert response.status_code == 200
+    assert response.json()["product_type_summary"] == {"Residential": 3}
+    assert response.json()["unmapped_product_types"] == ["unknown"]
+
+
 def test_disallowed_firm_and_malformed_parameters_are_specific(configured_client):
     client, _, _ = configured_client
 
