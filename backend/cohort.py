@@ -39,7 +39,7 @@ class Settings:
                 )
             ),
             audit_log_path=Path(
-                os.environ.get("COHORT_AUDIT_LOG_PATH", BASE_DIR / "audit/cohort.jsonl")
+                os.environ.get("COHORT_AUDIT_LOG_PATH", BASE_DIR / "queries.log")
             ),
         )
 

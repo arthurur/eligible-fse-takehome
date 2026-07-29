@@ -35,7 +35,7 @@ def configured_client(tmp_path: Path) -> tuple[TestClient, Path, Path]:
     mappings_path.write_text(
         '{"fixed":"Residential Fixed","tracker":"Tracker"}', encoding="utf-8"
     )
-    audit_path = tmp_path / "audit/cohort.jsonl"
+    audit_path = tmp_path / "queries.log"
     settings = Settings(
         data_path=data_path,
         firms_path=firms_path,
@@ -68,6 +68,41 @@ def test_cohort_applies_defaults_and_returns_product_coverage(configured_client)
     assert audit["firm"] == "lender_a"
     assert audit["result_count"] == 4
     assert audit["filters"]["days_since_last_email"] == 3
+
+
+def test_audit_log_is_json_lines_with_firms_timestamps_and_per_query_counts(
+    configured_client,
+):
+    client, _, audit_path = configured_client
+
+    client.get("/cohort", params={"firm": "lender_a"})
+    client.get("/cohort", params={"firm": "lender_empty"})
+    client.get("/cohort", params={"firm": "lender_a"})
+
+    records = [
+        json.loads(line)
+        for line in audit_path.read_text(encoding="utf-8").splitlines()
+    ]
+
+    assert [record["firm"] for record in records] == [
+        "lender_a",
+        "lender_empty",
+        "lender_a",
+    ]
+    assert [record["result_count"] for record in records] == [4, 0, 4]
+    assert {record["queried_at"] for record in records} == {
+        "2026-01-10T12:00:00+00:00"
+    }
+
+    # These are the only fields needed to select a 24-hour window, order firms
+    # by query frequency, and retain the result count of every individual query.
+    frequency = {}
+    for record in records:
+        frequency[record["firm"]] = frequency.get(record["firm"], 0) + 1
+    assert sorted(frequency.items(), key=lambda item: (-item[1], item[0])) == [
+        ("lender_a", 2),
+        ("lender_empty", 1),
+    ]
 
 
 def test_optional_filters_include_consumers_with_no_session(configured_client):
