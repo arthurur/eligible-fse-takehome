@@ -1,0 +1,11 @@
+{
+  "2yr_fixed": "Residential Fixed",
+  "3yr_fixed": "Residential Fixed",
+  "5yr_fixed": "Residential Fixed",
+  "10yr_fixed": "Residential Fixed",
+  "tracker": "Tracker",
+  "svr": "SVR",
+  "offset": "Offset",
+  "buy_to_let_2yr": "BTL",
+  "buy_to_let_5yr": "BTL"
+}
