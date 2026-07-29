@@ -1,0 +1,25 @@
+#!/bin/sh
+
+set -eu
+
+repo_root=$(git rev-parse --show-toplevel)
+
+echo "Running backend tests..."
+(
+  cd "$repo_root/backend"
+  uv run pytest
+)
+
+echo "Running frontend lint..."
+(
+  cd "$repo_root/frontend"
+  pnpm lint
+)
+
+echo "Running frontend build..."
+(
+  cd "$repo_root/frontend"
+  pnpm build
+)
+
+echo "Pre-push checks passed."

@@ -53,6 +53,14 @@ pnpm lint
 pnpm build
 ```
 
+To run all of these checks automatically before every push, enable the tracked Git hooks once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+The pre-push hook blocks the push if the backend tests, frontend lint, or frontend production build fails. To bypass it for an exceptional push, use `git push --no-verify`.
+
 ## What I'd do differently with more time
 
 - Add pagination or cursor-based retrieval instead of returning only the first 20 consumer previews.
