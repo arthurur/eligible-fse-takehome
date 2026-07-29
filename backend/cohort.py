@@ -60,6 +60,10 @@ class CohortResponse(BaseModel):
     unmapped_product_types: list[str]
 
 
+class FirmListResponse(BaseModel):
+    firms: list[str]
+
+
 def _utc(value: datetime) -> datetime:
     if value.tzinfo is None:
         return value.replace(tzinfo=UTC)
@@ -129,6 +133,9 @@ class CohortService:
         self.settings = settings
         self.clock = clock or (lambda: datetime.now(UTC))
         self.allowed_firms = _load_allowed_firms(settings.firms_path)
+
+    def list_allowed_firms(self) -> list[str]:
+        return sorted(self.allowed_firms)
 
     def query(
         self,

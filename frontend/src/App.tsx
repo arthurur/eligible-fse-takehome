@@ -1,9 +1,7 @@
+import { CohortViewerPage } from './pages/CohortViewerPage'
+
 function App() {
-  return (
-    <>
-      <section id="center">Eligible takehome</section>
-    </>
-  )
+  return <CohortViewerPage />
 }
 
 export default App

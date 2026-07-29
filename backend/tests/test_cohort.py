@@ -70,6 +70,31 @@ def test_cohort_applies_defaults_and_returns_product_coverage(configured_client)
     assert audit["filters"]["days_since_last_email"] == 3
 
 
+def test_firm_suggestions_are_sorted_and_come_from_access_configuration(
+    configured_client,
+):
+    client, _, _ = configured_client
+
+    response = client.get("/firms")
+
+    assert response.status_code == 200
+    assert response.json() == {"firms": ["lender_a", "lender_empty"]}
+
+
+def test_local_frontend_origin_is_allowed_by_cors(configured_client):
+    client, _, _ = configured_client
+
+    response = client.get(
+        "/firms",
+        headers={"Origin": "http://localhost:5173"},
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == (
+        "http://localhost:5173"
+    )
+
+
 def test_audit_log_is_json_lines_with_firms_timestamps_and_per_query_counts(
     configured_client,
 ):
