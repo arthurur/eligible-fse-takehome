@@ -54,6 +54,28 @@ def test_cohort_applies_defaults_and_returns_product_coverage(configured_client)
     assert response.json() == {
         "count": 4,
         "consumer_ids": ["c1", "c3", "c4", "c7"],
+        "consumer_previews": [
+            {
+                "consumer_id": "c1",
+                "last_session_at": None,
+                "product_type_canonical": "Residential Fixed",
+            },
+            {
+                "consumer_id": "c3",
+                "last_session_at": None,
+                "product_type_canonical": "Tracker",
+            },
+            {
+                "consumer_id": "c4",
+                "last_session_at": "2026-01-08T00:00:00Z",
+                "product_type_canonical": "Residential Fixed",
+            },
+            {
+                "consumer_id": "c7",
+                "last_session_at": None,
+                "product_type_canonical": None,
+            },
+        ],
         "cumulative_view_threshold": 5,
         "filters_applied": {
             "firm": "lender_a",
@@ -204,6 +226,10 @@ def test_product_mapping_changes_apply_without_restart(configured_client):
         "Other": 1,
         "Tracker": 1,
     }
+    assert changed["consumer_previews"][0]["product_type_canonical"] == (
+        "New Fixed Category"
+    )
+    assert changed["consumer_previews"][-1]["product_type_canonical"] == "Other"
     assert changed["unmapped_product_types"] == []
 
 
@@ -276,6 +302,7 @@ def test_empty_cohort_and_invalid_runtime_mapping(configured_client):
     assert empty.status_code == 200
     assert empty.json()["count"] == 0
     assert empty.json()["consumer_ids"] == []
+    assert empty.json()["consumer_previews"] == []
     assert empty.json()["product_type_summary"] == {}
 
     mappings_path.write_text("[]", encoding="utf-8")
@@ -307,3 +334,6 @@ def test_consumer_ids_are_limited_to_first_twenty(tmp_path: Path):
 
     assert result["count"] == 25
     assert result["consumer_ids"] == [f"c{i}" for i in range(20)]
+    assert [preview["consumer_id"] for preview in result["consumer_previews"]] == [
+        f"c{i}" for i in range(20)
+    ]

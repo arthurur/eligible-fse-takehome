@@ -6,9 +6,16 @@ export type CohortFilterValues = {
 
 export type CohortViewMode = 'cumulative' | 'recent-email-guardrail'
 
+export type ConsumerPreviewData = {
+  consumer_id: string
+  last_session_at: string | null
+  product_type_canonical: string | null
+}
+
 export type CohortResponse = {
   count: number
   consumer_ids: string[]
+  consumer_previews: ConsumerPreviewData[]
   cumulative_view_threshold: number
   filters_applied: {
     firm: string

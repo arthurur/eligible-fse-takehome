@@ -67,9 +67,16 @@ class FiltersApplied(BaseModel):
     has_open_mortgage: bool
 
 
+class ConsumerPreview(BaseModel):
+    consumer_id: str
+    last_session_at: datetime | None
+    product_type_canonical: str | None
+
+
 class CohortResponse(BaseModel):
     count: int
     consumer_ids: list[str]
+    consumer_previews: list[ConsumerPreview]
     cumulative_view_threshold: int
     filters_applied: FiltersApplied
     queried_at: datetime
@@ -178,7 +185,7 @@ class CohortService:
             )
         mappings = _load_product_mappings(self.settings.product_mappings_path)
 
-        product_counts, consumer_ids = self._query_dataset(
+        product_counts, preview_rows = self._query_dataset(
             firm=firm,
             email_cutoff=queried_at - timedelta(days=days_since_last_email),
             session_cutoff=session_cutoff,
@@ -195,9 +202,18 @@ class CohortService:
             else:
                 summary[canonical] = summary.get(canonical, 0) + product_count
 
+        consumer_previews = [
+            ConsumerPreview(
+                consumer_id=consumer_id,
+                last_session_at=last_session_at,
+                product_type_canonical=mappings.get(raw_product_type),
+            )
+            for consumer_id, last_session_at, raw_product_type in preview_rows
+        ]
         response = CohortResponse(
             count=count,
-            consumer_ids=consumer_ids,
+            consumer_ids=[preview.consumer_id for preview in consumer_previews],
+            consumer_previews=consumer_previews,
             cumulative_view_threshold=self.settings.cumulative_view_threshold,
             filters_applied=filters,
             queried_at=queried_at,
@@ -214,7 +230,7 @@ class CohortService:
         email_cutoff: datetime,
         session_cutoff: datetime | None,
         has_open_mortgage: bool,
-    ) -> tuple[dict[str, int], list[str]]:
+    ) -> tuple[dict[str, int], list[tuple[str, str | None, str]]]:
         predicates = [
             "firm = ?",
             "(last_email_at IS NULL OR last_email_at <= ?)",
@@ -247,7 +263,12 @@ class CohortService:
             "SELECT GROUPING(product_type) AS is_total,"
             "  COALESCE(product_type, '') AS product_type, COUNT(*) AS count,"
             "  LIST(COALESCE(consumer_id, '') ORDER BY row_number)"
-            "    FILTER (WHERE row_number <= 20) AS consumer_ids"
+            "    FILTER (WHERE row_number <= 20) AS consumer_ids,"
+            "  LIST(STRFTIME(last_session_at AT TIME ZONE 'UTC',"
+            "    '%Y-%m-%dT%H:%M:%SZ') ORDER BY row_number)"
+            "    FILTER (WHERE row_number <= 20) AS last_session_dates,"
+            "  LIST(COALESCE(product_type, '') ORDER BY row_number)"
+            "    FILTER (WHERE row_number <= 20) AS preview_product_types"
             " FROM filtered"
             " GROUP BY GROUPING SETS ((product_type), ())"
         )
@@ -262,13 +283,21 @@ class CohortService:
             ) from exc
 
         product_counts: dict[str, int] = {}
-        consumer_ids: list[str] = []
-        for is_total, product_type, count, ids in rows:
+        preview_rows: list[tuple[str, str | None, str]] = []
+        for is_total, product_type, count, ids, session_dates, product_types in rows:
             if is_total:
-                consumer_ids = [str(consumer_id) for consumer_id in (ids or [])]
+                preview_rows = [
+                    (str(consumer_id), last_session_at, str(raw_product_type))
+                    for consumer_id, last_session_at, raw_product_type in zip(
+                        ids or [],
+                        session_dates or [],
+                        product_types or [],
+                        strict=True,
+                    )
+                ]
             else:
                 product_counts[str(product_type)] = int(count)
-        return product_counts, consumer_ids
+        return product_counts, preview_rows
 
     def _write_audit(self, response: CohortResponse) -> None:
         record = {
