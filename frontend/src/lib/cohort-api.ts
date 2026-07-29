@@ -48,10 +48,14 @@ export async function getFirmSuggestions(signal?: AbortSignal): Promise<string[]
   return response.firms
 }
 
-export function queryCohort(filters: CohortFilterValues, signal?: AbortSignal): Promise<CohortResponse> {
+export function queryCohort(
+  filters: CohortFilterValues,
+  daysSinceLastEmail: number,
+  signal?: AbortSignal,
+): Promise<CohortResponse> {
   const params = new URLSearchParams({
     firm: filters.firm.trim(),
-    days_since_last_email: filters.daysSinceLastEmail,
+    days_since_last_email: String(daysSinceLastEmail),
     has_open_mortgage: filters.hasOpenMortgage,
   })
 

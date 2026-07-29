@@ -1,5 +1,13 @@
+import type { CSSProperties } from 'react'
 import type { RequestError } from '../../types/cohort'
 import { WarningIcon } from '../ui/WarningIcon'
+
+const productCoverageWidths = ['79%', '34%', '100%', '27%', '27%']
+const consumerPreviewCells = Array.from({ length: 20 }, (_, index) => index)
+
+function SkeletonBlock({ className, style }: { className: string; style?: CSSProperties }) {
+  return <span className={`block animate-pulse bg-[#e3e7ee] ${className}`} style={style} />
+}
 
 export function InitialQueryState() {
   return (
@@ -21,23 +29,72 @@ export function InitialQueryState() {
 
 export function LoadingQueryState() {
   return (
-    <div className="min-h-[470px] rounded-2xl bg-white p-6 shadow-[0_8px_28px_rgba(17,32,51,0.07)] sm:p-8">
-      <div className="flex items-center justify-between border-b border-[#e5e8ee] pb-6">
-        <div>
-          <div className="h-3 w-24 animate-pulse rounded bg-[#e3e7ee]" />
-          <div className="mt-3 h-9 w-40 animate-pulse rounded-lg bg-[#d9deea]" />
-        </div>
-        <div className="h-9 w-28 animate-pulse rounded-lg bg-[#e8ebf1]" />
-      </div>
-      <div className="grid gap-8 pt-8 xl:grid-cols-2">
-        {[0, 1].map((column) => (
-          <div key={column} className="space-y-4">
-            <div className="h-4 w-32 animate-pulse rounded bg-[#dfe3eb]" />
-            {[0, 1, 2, 3].map((row) => (
-              <div key={row} className="h-11 animate-pulse rounded-xl bg-[#f0f2f6]" />
-            ))}
+    <div
+      role="status"
+      className="rounded-2xl bg-white px-6 py-6 shadow-[0_8px_28px_rgba(17,32,51,0.07)] sm:px-8"
+    >
+      <div aria-hidden="true">
+        <div className="flex flex-col gap-5 border-b border-[#e5e8ee] pb-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <SkeletonBlock className="h-3 w-32 rounded" />
+            <div className="mt-3 flex items-end gap-3">
+              <SkeletonBlock className="h-12 w-24 rounded-lg bg-[#d9deea]" />
+              <SkeletonBlock className="mb-1 h-4 w-16 rounded" />
+            </div>
           </div>
-        ))}
+          <div className="space-y-2 sm:flex sm:flex-col sm:items-end">
+            <SkeletonBlock className="h-4 w-24 rounded" />
+            <SkeletonBlock className="h-3 w-44 max-w-full rounded" />
+          </div>
+        </div>
+
+        <div className="border-b border-[#e5e8ee] py-5">
+          <SkeletonBlock className="h-4 w-36 rounded" />
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <SkeletonBlock className="h-11 rounded-xl bg-[#edf0f5]" />
+            <SkeletonBlock className="h-11 rounded-xl bg-[#edf0f5]" />
+          </div>
+        </div>
+
+        <div className="grid gap-10 pt-7 xl:grid-cols-[minmax(0,0.9fr)_minmax(320px,1.1fr)]">
+          <div>
+            <div className="mb-5 flex items-center justify-between gap-4">
+              <SkeletonBlock className="h-5 w-36 rounded" />
+              <SkeletonBlock className="h-3 w-24 rounded" />
+            </div>
+            <div className="space-y-5">
+              {productCoverageWidths.map((width, index) => (
+                <div key={index}>
+                  <div className="mb-2 flex items-center justify-between gap-4">
+                    <SkeletonBlock className="h-4 w-28 rounded" />
+                    <SkeletonBlock className="h-4 w-7 rounded" />
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-[#edf0f5]">
+                    <SkeletonBlock className="h-full rounded-full bg-[#d9deea]" style={{ width }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <SkeletonBlock className="h-5 w-36 rounded" />
+              <SkeletonBlock className="h-3 w-24 rounded" />
+            </div>
+            <div className="grid overflow-hidden rounded-xl border border-[#dde1e8] sm:grid-cols-2">
+              {consumerPreviewCells.map((cell) => (
+                <div
+                  key={cell}
+                  className="flex h-[42px] items-center gap-3 border-b border-[#e5e8ee] bg-[#fbfcfd] px-3.5 last:border-b-0 sm:[&:nth-last-child(-n+2)]:border-b-0 sm:[&:nth-child(odd)]:border-r"
+                >
+                  <SkeletonBlock className="h-3 w-5 shrink-0 rounded" />
+                  <SkeletonBlock className="h-3 w-24 max-w-[60%] rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
       <p className="sr-only">Loading cohort preview</p>
     </div>

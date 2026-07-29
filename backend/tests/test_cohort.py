@@ -54,6 +54,7 @@ def test_cohort_applies_defaults_and_returns_product_coverage(configured_client)
     assert response.json() == {
         "count": 4,
         "consumer_ids": ["c1", "c3", "c4", "c7"],
+        "cumulative_view_threshold": 5,
         "filters_applied": {
             "firm": "lender_a",
             "days_since_last_email": 3,
@@ -79,6 +80,30 @@ def test_firm_suggestions_are_sorted_and_come_from_access_configuration(
 
     assert response.status_code == 200
     assert response.json() == {"firms": ["lender_a", "lender_empty"]}
+
+
+def test_cumulative_view_threshold_is_loaded_from_environment(monkeypatch):
+    monkeypatch.setenv("CUMULATIVE_VIEW_THRESHOLD", "9")
+
+    settings = Settings.from_environment()
+
+    assert settings.cumulative_view_threshold == 9
+
+
+@pytest.mark.parametrize("configured_value", ["-1", "not-a-number"])
+def test_invalid_cumulative_view_threshold_prevents_startup(
+    monkeypatch,
+    configured_value,
+):
+    monkeypatch.setenv("CUMULATIVE_VIEW_THRESHOLD", configured_value)
+
+    with pytest.raises(HTTPException) as raised:
+        Settings.from_environment()
+
+    assert raised.value.status_code == 500
+    assert raised.value.detail == (
+        "CUMULATIVE_VIEW_THRESHOLD must be a non-negative integer"
+    )
 
 
 def test_local_frontend_origin_is_allowed_by_cors(configured_client):

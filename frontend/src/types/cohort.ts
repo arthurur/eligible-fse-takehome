@@ -1,13 +1,15 @@
 export type CohortFilterValues = {
   firm: string
-  daysSinceLastEmail: string
   noSessionSince: string
   hasOpenMortgage: string
 }
 
+export type CohortViewMode = 'cumulative' | 'recent-email-guardrail'
+
 export type CohortResponse = {
   count: number
   consumer_ids: string[]
+  cumulative_view_threshold: number
   filters_applied: {
     firm: string
     days_since_last_email: number

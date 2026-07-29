@@ -6,16 +6,21 @@ import { getFirmSuggestions, normalizeRequestError, queryCohort } from '../lib/c
 import type {
   CohortFilterValues,
   CohortResponse,
+  CohortViewMode,
   FirmSuggestionStatus,
   RequestError,
 } from '../types/cohort'
+
+const RECENT_EMAIL_GUARDRAIL_DAYS = 3
+
+type CohortResultsByMode = Partial<Record<CohortViewMode, CohortResponse>>
 
 /*
 THESIS: A calm query desk that puts cohort guardrails beside the resulting evidence.
 OWN-WORLD: Ink, paper, cobalt, and amber; squared data rows with restrained rounding.
 STORY: Set eligibility rules, run a query, inspect coverage, then review consumer IDs.
 FIRST VIEWPORT: Persistent filters at left; result status and operational detail at right.
-FORM: Split-pane operator console, shaped directly for the four-parameter workflow.
+FORM: Split-pane operator console, with threshold-triggered outreach controls in the result.
 */
 
 function isAbortError(caught: unknown): boolean {
@@ -25,9 +30,11 @@ function isAbortError(caught: unknown): boolean {
 export function CohortViewerPage() {
   const [firmSuggestions, setFirmSuggestions] = useState<string[]>([])
   const [firmSuggestionStatus, setFirmSuggestionStatus] = useState<FirmSuggestionStatus>('loading')
-  const [result, setResult] = useState<CohortResponse | null>(null)
   const [error, setError] = useState<RequestError | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [submittedFilters, setSubmittedFilters] = useState<CohortFilterValues | null>(null)
+  const [viewMode, setViewMode] = useState<CohortViewMode>('cumulative')
+  const [resultsByMode, setResultsByMode] = useState<CohortResultsByMode>({})
   const queryController = useRef<AbortController | null>(null)
 
   useEffect(() => {
@@ -47,17 +54,22 @@ export function CohortViewerPage() {
 
   useEffect(() => () => queryController.current?.abort(), [])
 
-  async function handleSubmit(filters: CohortFilterValues) {
+  async function runQuery(filters: CohortFilterValues, mode: CohortViewMode) {
     queryController.current?.abort()
     const controller = new AbortController()
     queryController.current = controller
 
     setIsLoading(true)
     setError(null)
-    setResult(null)
 
     try {
-      setResult(await queryCohort(filters, controller.signal))
+      const daysSinceLastEmail = mode === 'cumulative' ? 0 : RECENT_EMAIL_GUARDRAIL_DAYS
+      const nextResult = await queryCohort(filters, daysSinceLastEmail, controller.signal)
+
+      if (queryController.current !== controller) return
+
+      setResultsByMode((current) => ({ ...current, [mode]: nextResult }))
+      setViewMode(mode)
     } catch (caught) {
       if (!isAbortError(caught)) setError(normalizeRequestError(caught))
     } finally {
@@ -66,6 +78,26 @@ export function CohortViewerPage() {
         setIsLoading(false)
       }
     }
+  }
+
+  function handleSubmit(filters: CohortFilterValues) {
+    setSubmittedFilters(filters)
+    setViewMode('cumulative')
+    setResultsByMode({})
+    void runQuery(filters, 'cumulative')
+  }
+
+  function handleViewModeChange(mode: CohortViewMode) {
+    if (!submittedFilters || mode === viewMode) return
+
+    const cachedResult = resultsByMode[mode]
+    if (cachedResult) {
+      setError(null)
+      setViewMode(mode)
+      return
+    }
+
+    void runQuery(submittedFilters, mode)
   }
 
   return (
@@ -88,7 +120,14 @@ export function CohortViewerPage() {
             isSubmitting={isLoading}
             onSubmit={handleSubmit}
           />
-          <CohortPreview isLoading={isLoading} error={error} result={result} />
+          <CohortPreview
+            isLoading={isLoading}
+            error={error}
+            result={resultsByMode[viewMode] ?? null}
+            viewMode={viewMode}
+            cumulativeCount={resultsByMode.cumulative?.count ?? null}
+            onViewModeChange={handleViewModeChange}
+          />
         </div>
       </main>
     </div>

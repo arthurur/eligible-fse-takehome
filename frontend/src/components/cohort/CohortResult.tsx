@@ -1,4 +1,4 @@
-import type { CohortResponse } from '../../types/cohort'
+import type { CohortResponse, CohortViewMode } from '../../types/cohort'
 import { WarningIcon } from '../ui/WarningIcon'
 import { ConsumerPreview } from './ConsumerPreview'
 import { ProductCoverage } from './ProductCoverage'
@@ -10,7 +10,22 @@ function formatTimestamp(value: string): string {
   }).format(new Date(value))
 }
 
-export function CohortResult({ result }: { result: CohortResponse }) {
+type CohortResultProps = {
+  result: CohortResponse
+  viewMode: CohortViewMode
+  cumulativeCount: number | null
+  onViewModeChange: (mode: CohortViewMode) => void
+}
+
+export function CohortResult({
+  result,
+  viewMode,
+  cumulativeCount,
+  onViewModeChange,
+}: CohortResultProps) {
+  const showViewToggle =
+    cumulativeCount !== null && cumulativeCount > result.cumulative_view_threshold
+
   return (
     <div className="space-y-5">
       <div className="rounded-2xl bg-white px-6 py-6 shadow-[0_8px_28px_rgba(17,32,51,0.07)] sm:px-8">
@@ -29,6 +44,30 @@ export function CohortResult({ result }: { result: CohortResponse }) {
             <p className="mt-1 text-xs text-[#667085]">Queried {formatTimestamp(result.queried_at)}</p>
           </div>
         </div>
+
+        {showViewToggle && (
+          <fieldset className="border-b border-[#e5e8ee] py-5">
+            <legend className="mb-3 text-sm font-semibold text-[#344054]">Email eligibility view</legend>
+            <div className="grid gap-2 sm:grid-cols-2" aria-label="Email eligibility view">
+              <button
+                type="button"
+                aria-pressed={viewMode === 'cumulative'}
+                onClick={() => onViewModeChange('cumulative')}
+                className="min-h-11 rounded-xl border border-[#d7dce5] px-4 py-2.5 text-left text-sm font-semibold text-[#475467] transition hover:border-[#9eabc5] hover:bg-[#f8f9fb] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1637d6] aria-pressed:border-[#1637d6] aria-pressed:bg-[#eef1ff] aria-pressed:text-[#1637d6]"
+              >
+                Cumulative view
+              </button>
+              <button
+                type="button"
+                aria-pressed={viewMode === 'recent-email-guardrail'}
+                onClick={() => onViewModeChange('recent-email-guardrail')}
+                className="min-h-11 rounded-xl border border-[#d7dce5] px-4 py-2.5 text-left text-sm font-semibold text-[#475467] transition hover:border-[#9eabc5] hover:bg-[#f8f9fb] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1637d6] aria-pressed:border-[#1637d6] aria-pressed:bg-[#eef1ff] aria-pressed:text-[#1637d6]"
+              >
+                Exclude anyone emailed in the last 3 days
+              </button>
+            </div>
+          </fieldset>
+        )}
 
         {result.count === 0 ? (
           <div className="py-12 text-center">

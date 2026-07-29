@@ -22,9 +22,24 @@ class Settings:
     firms_path: Path
     product_mappings_path: Path
     audit_log_path: Path
+    cumulative_view_threshold: int = 5
 
     @classmethod
     def from_environment(cls) -> Settings:
+        raw_threshold = os.environ.get("CUMULATIVE_VIEW_THRESHOLD", "5")
+        try:
+            cumulative_view_threshold = int(raw_threshold)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="CUMULATIVE_VIEW_THRESHOLD must be a non-negative integer",
+            ) from exc
+        if cumulative_view_threshold < 0:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="CUMULATIVE_VIEW_THRESHOLD must be a non-negative integer",
+            )
+
         return cls(
             data_path=Path(
                 os.environ.get("MORTGAGES_CSV_PATH", BASE_DIR / "data/mortgages.csv")
@@ -41,6 +56,7 @@ class Settings:
             audit_log_path=Path(
                 os.environ.get("COHORT_AUDIT_LOG_PATH", BASE_DIR / "queries.log")
             ),
+            cumulative_view_threshold=cumulative_view_threshold,
         )
 
 
@@ -54,6 +70,7 @@ class FiltersApplied(BaseModel):
 class CohortResponse(BaseModel):
     count: int
     consumer_ids: list[str]
+    cumulative_view_threshold: int
     filters_applied: FiltersApplied
     queried_at: datetime
     product_type_summary: dict[str, int]
@@ -181,6 +198,7 @@ class CohortService:
         response = CohortResponse(
             count=count,
             consumer_ids=consumer_ids,
+            cumulative_view_threshold=self.settings.cumulative_view_threshold,
             filters_applied=filters,
             queried_at=queried_at,
             product_type_summary=dict(sorted(summary.items())),

@@ -6,7 +6,6 @@ import { TextField } from '../form/TextField'
 
 const initialFilters: CohortFilterValues = {
   firm: '',
-  daysSinceLastEmail: '3',
   noSessionSince: '',
   hasOpenMortgage: 'true',
 }
@@ -39,7 +38,7 @@ export function CohortFiltersForm({
     <aside className="rounded-2xl bg-[#111c38] p-5 text-white shadow-[0_16px_40px_rgba(17,28,56,0.14)] sm:p-6 lg:sticky lg:top-6">
       <div className="mb-6">
         <h2 className="text-lg font-semibold tracking-[-0.02em]">Cohort filters</h2>
-        <p className="mt-1 text-sm leading-5 text-[#b9c2d7]">All four rules are sent with every query.</p>
+        <p className="mt-1 text-sm leading-5 text-[#b9c2d7]">Set the cohort rules, then preview outreach guardrails in the result.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -54,20 +53,6 @@ export function CohortFiltersForm({
           required
           placeholder="Search firms"
           description="Firm access is checked by the service."
-        />
-
-        <TextField
-          id="days-since-email"
-          name="days_since_last_email"
-          label="Days since last email"
-          type="number"
-          min="0"
-          step="1"
-          inputMode="numeric"
-          value={filters.daysSinceLastEmail}
-          onChange={(value) => updateFilter('daysSinceLastEmail', value)}
-          required
-          suffix="days"
         />
 
         <TextField
